@@ -116,3 +116,7 @@ LOGGING = {
     'handlers': {'console': {'class': 'logging.StreamHandler'}},
     'root': {'handlers': ['console'], 'level': 'WARNING'},
 }
+
+WEATHER_API_KEY = os.getenv('WEATHER_API_KEY')
+WEATHER_CACHE_TTL_MINUTES = int(os.getenv('WEATHER_CACHE_TTL_MINUTES', 10))
+WEATHER_API_TIMEOUT = int(os.getenv('WEATHER_API_TIMEOUT', 10))  # in seconds
