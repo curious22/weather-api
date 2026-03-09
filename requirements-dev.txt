@@ -1,0 +1,4 @@
+-r requirements.txt
+ipython
+pre-commit
+ruff==0.15.4
