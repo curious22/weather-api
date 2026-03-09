@@ -33,7 +33,7 @@ class Migration(migrations.Migration):
             options={
                 'db_table': 'weather_cache',
                 'indexes': [
-                    models.Index(fields=['lat', 'lon', 'data_type', 'fetched_at'], name='weather_cac_lat_0c5cdf_idx')
+                    models.Index(fields=['lat', 'lon', 'data_type', 'fetched_at'], name='weather_cache_lookup_idx')
                 ],
             },
         )

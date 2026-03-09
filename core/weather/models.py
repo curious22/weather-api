@@ -12,4 +12,4 @@ class WeatherCache(models.Model):
 
     class Meta:
         db_table = 'weather_cache'
-        indexes = [models.Index(fields=('lat', 'lon', 'data_type', 'fetched_at'))]
+        indexes = [models.Index(fields=('lat', 'lon', 'data_type', 'fetched_at'), name='weather_cache_lookup_idx')]
