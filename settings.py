@@ -17,6 +17,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # Third-Party Apps
     'rest_framework',
+    'rest_framework.authtoken',
     # Local applications (e.g. "core.<application-name>")
     'core.weather',
 ]
@@ -103,11 +104,21 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', 'http://localhost').split(',')
 
+WEATHER_API_KEY = os.getenv('WEATHER_API_KEY')
+WEATHER_CACHE_TTL_MINUTES = int(os.getenv('WEATHER_CACHE_TTL_MINUTES', 10))
+WEATHER_API_TIMEOUT = int(os.getenv('WEATHER_API_TIMEOUT', 10))  # in seconds
+WEATHER_THROTTLE_RATE = os.getenv('WEATHER_THROTTLE_RATE', default='60/minute')
+
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': ['rest_framework.authentication.SessionAuthentication'],
+    'DEFAULT_AUTHENTICATION_CLASSES': ['rest_framework.authentication.TokenAuthentication'],
     'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated'],
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 20,
+    'EXCEPTION_HANDLER': 'api.exception_handler.weather_exception_handler',
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'user': WEATHER_THROTTLE_RATE,
+    },
 }
 
 LOGGING = {
@@ -116,7 +127,3 @@ LOGGING = {
     'handlers': {'console': {'class': 'logging.StreamHandler'}},
     'root': {'handlers': ['console'], 'level': 'WARNING'},
 }
-
-WEATHER_API_KEY = os.getenv('WEATHER_API_KEY')
-WEATHER_CACHE_TTL_MINUTES = int(os.getenv('WEATHER_CACHE_TTL_MINUTES', 10))
-WEATHER_API_TIMEOUT = int(os.getenv('WEATHER_API_TIMEOUT', 10))  # in seconds
