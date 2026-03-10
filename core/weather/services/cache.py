@@ -12,24 +12,28 @@ from .owm_client import fetch_weather_from_api
 def get_cached_weather(lat: float, lon: float, data_type: WeatherDataType) -> WeatherCache | None:
     """Return a fresh cached record for the given coordinates and data type, or None if expired/missing."""
     threshold = now() - timedelta(minutes=settings.WEATHER_CACHE_TTL_MINUTES)
-    return WeatherCache.objects.filter(
+    try:
+        return WeatherCache.objects.filter(
+            lat=lat,
+            lon=lon,
+            data_type=data_type,
+            fetched_at__gte=threshold,
+        ).get()
+    except WeatherCache.DoesNotExist:
+        return None
+
+
+def save_weather_cache(lat, lon, data_type, weather_data) -> WeatherCache:
+    instance, _ = WeatherCache.objects.update_or_create(
         lat=lat,
         lon=lon,
         data_type=data_type,
-        fetched_at__gte=threshold,
-    ).first()
-
-
-def save_weather_cache(lat: float, lon: float, data_type: WeatherDataType, weather_data: dict) -> WeatherCache:
-    """Persist raw API response to the cache and return the saved instance."""
-    instance = WeatherCache(lat=lat, lon=lon, data_type=data_type, weather_data=weather_data)
-    instance.full_clean()
-    instance.save()
-
+        defaults={'weather_data': weather_data, 'fetched_at': now()},
+    )
     return instance
 
 
-def get_weather(lat: float, lon: float, data_type: WeatherDataType) -> WeatherCache | None:
+def get_weather(lat: float, lon: float, data_type: WeatherDataType) -> WeatherCache:
     """
     Return weather data for the given coordinates and type.
 

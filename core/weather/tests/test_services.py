@@ -2,7 +2,7 @@ from datetime import timedelta
 from decimal import Decimal
 from unittest.mock import MagicMock, patch
 
-from django.core.exceptions import ValidationError
+from django.db import IntegrityError
 from django.test import TestCase, override_settings
 from django.utils.timezone import now
 from requests import exceptions as req_exc
@@ -179,9 +179,27 @@ class SaveWeatherCacheTest(TestCase):
         self.assertEqual(result.data_type, WeatherDataType.CURRENT)
         self.assertEqual(result.weather_data, WEATHER_DATA)
 
-    def test_raises_validation_error_for_invalid_data(self):
-        with self.assertRaises(ValidationError):
+    def test_raises_integrity_error_for_null_coords(self):
+        with self.assertRaises(IntegrityError):
             save_weather_cache(None, None, WeatherDataType.CURRENT, WEATHER_DATA)
+
+    def test_updates_existing_record_on_duplicate_coords(self):
+        first = save_weather_cache(LAT, LON, WeatherDataType.CURRENT, WEATHER_DATA)
+        new_data = {'current': {'temp': 99.9}}
+        result = save_weather_cache(LAT, LON, WeatherDataType.CURRENT, new_data)
+        self.assertEqual(WeatherCache.objects.count(), 1)
+        self.assertEqual(result.pk, first.pk)
+        self.assertEqual(result.weather_data, new_data)
+
+    def test_updates_fetched_at_on_upsert(self):
+        old_entry = make_cache_entry(fetched_at=now() - timedelta(minutes=30))
+        result = save_weather_cache(LAT, LON, WeatherDataType.CURRENT, WEATHER_DATA)
+        self.assertGreater(result.fetched_at, old_entry.fetched_at)
+
+    def test_duplicate_coord_type_raises_integrity_error(self):
+        WeatherCache.objects.create(lat=LAT, lon=LON, data_type=WeatherDataType.CURRENT, weather_data=WEATHER_DATA)
+        with self.assertRaises(IntegrityError):
+            WeatherCache.objects.create(lat=LAT, lon=LON, data_type=WeatherDataType.CURRENT, weather_data=WEATHER_DATA)
 
 
 @override_settings(WEATHER_CACHE_TTL_MINUTES=60)
@@ -207,7 +225,7 @@ class GetWeatherTest(TestCase):
         mock_fetch.return_value = WEATHER_DATA
         result = get_weather(LAT, LON, WeatherDataType.CURRENT)
         mock_fetch.assert_called_once()
-        self.assertEqual(WeatherCache.objects.count(), 2)
+        self.assertEqual(WeatherCache.objects.count(), 1)
         self.assertIsInstance(result, WeatherCache)
         self.assertEqual(result.weather_data, WEATHER_DATA)
 

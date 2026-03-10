@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
+
 BASE_DIR = Path(__file__).resolve().parent
 SECRET_KEY = os.environ.get('SECRET_KEY')
 DEBUG = os.environ.get('DEBUG', False)
@@ -108,6 +110,9 @@ WEATHER_API_KEY = os.getenv('WEATHER_API_KEY')
 WEATHER_CACHE_TTL_MINUTES = int(os.getenv('WEATHER_CACHE_TTL_MINUTES', 10))
 WEATHER_API_TIMEOUT = int(os.getenv('WEATHER_API_TIMEOUT', 10))  # in seconds
 WEATHER_THROTTLE_RATE = os.getenv('WEATHER_THROTTLE_RATE', default='60/minute')
+
+if not WEATHER_API_KEY:
+    raise ImproperlyConfigured('WEATHER_API_KEY environment variable is required.')
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': ['rest_framework.authentication.TokenAuthentication'],

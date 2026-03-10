@@ -10,6 +10,8 @@ from core.weather.exceptions import (
 )
 
 _STATUS_MAP = {
+    # ORDER MATTERS: subclasses must precede base WeatherAPIError,
+    # because we use isinstance() which matches parent classes too.
     WeatherAPIAuthError: status.HTTP_502_BAD_GATEWAY,
     WeatherAPIRateLimitError: status.HTTP_503_SERVICE_UNAVAILABLE,
     WeatherAPIServerError: status.HTTP_502_BAD_GATEWAY,
