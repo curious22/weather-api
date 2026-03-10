@@ -19,3 +19,6 @@ class WeatherCache(models.Model):
         constraints = [
             models.UniqueConstraint(fields=('lat', 'lon', 'data_type'), name='weather_cache_unique_coord_type'),
         ]
+
+    def __str__(self):
+        return f'WeatherCache({self.id=}, {self.lat}, {self.lon}, {self.data_type})'

@@ -1,4 +1,5 @@
 from datetime import timedelta
+from decimal import Decimal
 
 from django.conf import settings
 from django.utils.timezone import now
@@ -23,7 +24,8 @@ def get_cached_weather(lat: float, lon: float, data_type: WeatherDataType) -> We
         return None
 
 
-def save_weather_cache(lat, lon, data_type, weather_data) -> WeatherCache:
+def save_weather_cache(lat: Decimal, lon: Decimal, data_type: WeatherDataType, weather_data: dict) -> WeatherCache:
+    """Upsert weather cache entry for the given coordinates and data type."""
     instance, _ = WeatherCache.objects.update_or_create(
         lat=lat,
         lon=lon,
@@ -33,12 +35,9 @@ def save_weather_cache(lat, lon, data_type, weather_data) -> WeatherCache:
     return instance
 
 
-def get_weather(lat: float, lon: float, data_type: WeatherDataType) -> WeatherCache:
+def get_weather(lat: Decimal, lon: Decimal, data_type: WeatherDataType) -> WeatherCache:
     """
     Return weather data for the given coordinates and type.
-
-    Serves from cache if a fresh record exists; otherwise fetches from OWM API,
-    saves the result, and returns the new cache entry.
     Raises WeatherAPIError (or subclass) if the API request fails.
     """
     cached = get_cached_weather(lat, lon, data_type)
