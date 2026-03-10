@@ -20,6 +20,14 @@ User = get_user_model()
 URL = '/api/v1/weather-forecasts/'
 LAT, LON = '47.838700', '35.138300'
 WEATHER_DATA = {'current': {'temp': 20.5}}
+
+NOT_AUTHENTICATED_MSG = 'Authentication credentials were not provided.'
+FIELD_REQUIRED_MSG = 'This field is required.'
+LAT_MAX_VALUE_MSG = 'Ensure this value is less than or equal to 90.'
+LAT_MIN_VALUE_MSG = 'Ensure this value is greater than or equal to -90.'
+LON_MAX_VALUE_MSG = 'Ensure this value is less than or equal to 180.'
+LON_MIN_VALUE_MSG = 'Ensure this value is greater than or equal to -180.'
+INVALID_CHOICE_MSG = '"invalid" is not a valid choice.'
 SERVICE_UNAVAILABLE_MSG = 'Weather service is temporarily unavailable. Please try again later.'
 
 
@@ -50,6 +58,7 @@ class WeatherForecastViewTest(APITestCase):
         self.client.credentials()
         response = self.client.get(URL, {'lat': LAT, 'lon': LON, 'data_type': 'current'})
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(str(response.data['detail']), NOT_AUTHENTICATED_MSG)
 
     # -------------------------------------------------------------------------
     # Query param validation
@@ -58,42 +67,42 @@ class WeatherForecastViewTest(APITestCase):
     def test_missing_lat_returns_400(self):
         response = self.client.get(URL, {'lon': LON, 'data_type': 'current'})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('This field is required.', str(response.data['lat']))
+        self.assertIn(FIELD_REQUIRED_MSG, str(response.data['lat']))
 
     def test_missing_lon_returns_400(self):
         response = self.client.get(URL, {'lat': LAT, 'data_type': 'current'})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('This field is required.', str(response.data['lon']))
+        self.assertIn(FIELD_REQUIRED_MSG, str(response.data['lon']))
 
     def test_missing_data_type_returns_400(self):
         response = self.client.get(URL, {'lat': LAT, 'lon': LON})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('This field is required.', str(response.data['data_type']))
+        self.assertIn(FIELD_REQUIRED_MSG, str(response.data['data_type']))
 
     def test_lat_above_90_returns_400(self):
         response = self.client.get(URL, {'lat': '91', 'lon': LON, 'data_type': 'current'})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('Latitude must be between -90 and 90.', str(response.data['lat']))
+        self.assertIn(LAT_MAX_VALUE_MSG, str(response.data['lat']))
 
     def test_lat_below_minus_90_returns_400(self):
         response = self.client.get(URL, {'lat': '-91', 'lon': LON, 'data_type': 'current'})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('Latitude must be between -90 and 90.', str(response.data['lat']))
+        self.assertIn(LAT_MIN_VALUE_MSG, str(response.data['lat']))
 
     def test_lon_above_180_returns_400(self):
         response = self.client.get(URL, {'lat': LAT, 'lon': '181', 'data_type': 'current'})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('Longitude must be between -180 and 180.', str(response.data['lon']))
+        self.assertIn(LON_MAX_VALUE_MSG, str(response.data['lon']))
 
     def test_lon_below_minus_180_returns_400(self):
         response = self.client.get(URL, {'lat': LAT, 'lon': '-181', 'data_type': 'current'})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('Longitude must be between -180 and 180.', str(response.data['lon']))
+        self.assertIn(LON_MIN_VALUE_MSG, str(response.data['lon']))
 
     def test_invalid_data_type_returns_400(self):
         response = self.client.get(URL, {'lat': LAT, 'lon': LON, 'data_type': 'invalid'})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('"invalid" is not a valid choice.', str(response.data['data_type']))
+        self.assertIn(INVALID_CHOICE_MSG, str(response.data['data_type']))
 
     # -------------------------------------------------------------------------
     # Success response format
